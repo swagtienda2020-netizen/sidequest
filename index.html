@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SideQuest - Diario de Aventuras RPG</title>
+  
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="Gestiona misiones secundarias de tu vida real, gana XP, sube tus atributos RPG y desbloquea logros en tu diario de aventuras.">
+  <meta name="theme-color" content="#0F172A">
+  <link rel="manifest" href="manifest.json">
+  <link rel="shortcut icon" href="icon-192.png" type="image/png">
+  
+  <!-- Apple Touch Icon -->
+  <link rel="apple-touch-icon" href="icon-192.png">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Canvas de Confetti para Celebraciones -->
+  <canvas id="confetti-canvas"></canvas>
+
+  <div class="app-container">
+    
+    <!-- Barra Superior / Header -->
+    <header class="main-header">
+      <div class="logo-area">
+        <span class="logo-icon">⚔️</span>
+        <h1 class="logo-title">SideQuest</h1>
+      </div>
+      
+      <div class="user-summary">
+        <div class="streak-badge" title="Racha de misiones completadas">
+          <span class="fire-icon">🔥</span>
+          <span id="streak-count">0</span> días
+        </div>
+        
+        <div class="header-xp-panel">
+          <div class="level-badge">NIVEL <span id="header-level">1</span></div>
+          <div class="header-xp-bar-container">
+            <div id="header-xp-bar" class="header-xp-bar-fill" style="width: 0%;"></div>
+          </div>
+        </div>
+
+        <button id="sound-toggle-btn" class="icon-btn" title="Activar/Desactivar Sonido">
+          <span id="sound-icon">🔊</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Contenido Principal -->
+    <main class="main-content">
+      
+      <!-- Pestaña 1: DASHBOARD -->
+      <section id="tab-dashboard" class="tab-panel active">
+        <div class="dashboard-hero">
+          <div class="hero-overlay"></div>
+          <div class="hero-content">
+            <h2 class="cinzel-title">Tu aventura continúa...</h2>
+            <p id="motivational-quote" class="quote-text">"El primer paso de cualquier misión es el más heroico."</p>
+          </div>
+        </div>
+
+        <div class="dashboard-grid">
+          <!-- Tarjeta de Personaje Grande -->
+          <div class="glass-card character-card">
+            <h3 class="card-title"><span class="emoji-icon">👤</span> Hoja del Personaje</h3>
+            
+            <div class="character-details">
+              <div class="character-avatar-container">
+                <div class="character-avatar" id="character-avatar-img">🎒</div>
+                <div class="character-title" id="character-rank">Explorador Novato</div>
+              </div>
+              
+              <div class="character-xp-stats">
+                <div class="level-display">
+                  <span class="level-label">Nivel</span>
+                  <span id="char-level" class="level-val">1</span>
+                </div>
+                <div class="xp-numbers">
+                  <span id="char-xp-current">0</span> / <span id="char-xp-next">100</span> XP
+                </div>
+                <div class="xp-bar-outer">
+                  <div id="char-xp-fill" class="xp-bar-inner" style="width: 0%;"></div>
+                </div>
+                <p class="xp-remaining">Te faltan <span id="char-xp-diff">100</span> XP para el siguiente nivel.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Misión del Día -->
+          <div class="glass-card quest-of-the-day-card">
+            <div class="card-header-flex">
+              <h3 class="card-title"><span class="emoji-icon">⭐</span> Misión del Día</h3>
+              <button id="reroll-daily-btn" class="text-btn-sm">Sugerir otra 🔄</button>
+            </div>
+            <div id="daily-quest-container">
+              <!-- Cargado dinámicamente -->
+              <p class="empty-state">No tienes misiones activas disponibles hoy. ¡Crea una nueva aventura!</p>
+            </div>
+          </div>
+
+          <!-- Panel de Estadísticas Rápidas -->
+          <div class="glass-card quick-stats-card">
+            <h3 class="card-title"><span class="emoji-icon">📈</span> Resumen de Aventuras</h3>
+            <div class="quick-stats-grid">
+              <div class="quick-stat-item">
+                <span class="stat-num" id="stat-completed-quests">0</span>
+                <span class="stat-label">Completadas</span>
+              </div>
+              <div class="quick-stat-item">
+                <span class="stat-num" id="stat-active-quests">0</span>
+                <span class="stat-label">Activas</span>
+              </div>
+              <div class="quick-stat-item">
+                <span class="stat-num" id="stat-unlocked-achievements">0</span>
+                <span class="stat-label">Logros</span>
+              </div>
+              <div class="quick-stat-item">
+                <span class="stat-num" id="stat-total-xp">0</span>
+                <span class="stat-label">XP Total</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Pestaña 2: MISIONES -->
+      <section id="tab-quests" class="tab-panel">
+        <div class="panel-header-actions">
+          <h2 class="section-heading cinzel-title">Bitácora de Misiones</h2>
+          <button id="add-quest-btn" class="primary-btn">
+            <span class="btn-icon">＋</span> Nueva Misión
+          </button>
+        </div>
+
+        <!-- Barra de Búsqueda y Filtros -->
+        <div class="glass-card filter-bar">
+          <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="search-input" placeholder="Buscar misiones por nombre o descripción...">
+          </div>
+          
+          <div class="filters-grid">
+            <div class="filter-group">
+              <label for="filter-category">Categoría</label>
+              <select id="filter-category">
+                <option value="all">Todas</option>
+                <option value="Exploración Urbana">Exploración Urbana</option>
+                <option value="Desarrollo de Personaje">Desarrollo de Personaje</option>
+                <option value="Interacciones con NPCs">Interacciones con NPCs</option>
+                <option value="Misticismo y Desconexión">Misticismo y Desconexión</option>
+                <option value="Aventuras Sociales">Aventuras Sociales</option>
+                <option value="Desafíos Mentales">Desafíos Mentales</option>
+                <option value="Creatividad">Creatividad</option>
+                <option value="Salud y Energía">Salud y Energía</option>
+                <option value="Aprendizaje">Aprendizaje</option>
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <label for="filter-difficulty">Dificultad</label>
+              <select id="filter-difficulty">
+                <option value="all">Todas</option>
+                <option value="Bronce">🥉 Bronce</option>
+                <option value="Plata">🥈 Plata</option>
+                <option value="Oro">🥇 Oro</option>
+                <option value="Épica">💎 Épica</option>
+                <option value="Legendaria">👑 Legendaria</option>
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <label for="filter-status">Estado</label>
+              <select id="filter-status">
+                <option value="active">Activas (Disponibles + En Progreso)</option>
+                <option value="Disponible">Disponible</option>
+                <option value="En progreso">En progreso</option>
+                <option value="Completada">Completada</option>
+                <option value="Archivada">Archivada</option>
+                <option value="all">Todas</option>
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <label for="filter-sort">Ordenar por</label>
+              <select id="filter-sort">
+                <option value="newest">Más nuevas</option>
+                <option value="oldest">Más antiguas</option>
+                <option value="xp-desc">Mayor XP</option>
+                <option value="xp-asc">Menor XP</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contenedor de Tarjetas de Misiones -->
+        <div id="quests-grid" class="quests-grid">
+          <!-- Cargado dinámicamente -->
+        </div>
+        
+        <div id="quests-empty-state" class="empty-state-large hidden">
+          <span class="empty-state-icon">🗺️</span>
+          <h3>Ninguna misión coincide con tus filtros</h3>
+          <p>Prueba a cambiar tus criterios de búsqueda o crea una nueva misión secundaria.</p>
+        </div>
+      </section>
+
+      <!-- Pestaña 3: ATRIBUTOS -->
+      <section id="tab-attributes" class="tab-panel">
+        <h2 class="section-heading cinzel-title">Árbol de Atributos</h2>
+        <p class="section-sub">Tus estadísticas de personaje. Completar misiones otorga puntos y sube los niveles correspondientes.</p>
+        
+        <div class="attributes-grid" id="attributes-grid-container">
+          <!-- Cargado dinámicamente -->
+        </div>
+      </section>
+
+      <!-- Pestaña 4: LOGROS -->
+      <section id="tab-achievements" class="tab-panel">
+        <h2 class="section-heading cinzel-title">Vitrina de Logros</h2>
+        <p class="section-sub">Desbloquea medallas legendarias completando hitos en tu vida real.</p>
+        
+        <div class="achievements-showcase" id="achievements-container">
+          <!-- Cargado dinámicamente -->
+        </div>
+      </section>
+
+      <!-- Pestaña 5: ESTADÍSTICAS & AJUSTES -->
+      <section id="tab-stats" class="tab-panel">
+        <h2 class="section-heading cinzel-title">Reportes & Ajustes</h2>
+        <p class="section-sub">Visualiza tu crecimiento a lo largo del tiempo y gestiona tu información local.</p>
+
+        <div class="stats-panels-grid">
+          
+          <!-- Histórico de XP (Gráfico SVG) -->
+          <div class="glass-card stat-card-full">
+            <h3 class="card-title"><span class="emoji-icon">📊</span> Registro Mensual de XP</h3>
+            <div class="chart-container" id="xp-history-chart-container">
+              <!-- SVG dinámico renderizado por JS -->
+            </div>
+          </div>
+
+          <!-- Distribución de Categorías -->
+          <div class="glass-card">
+            <h3 class="card-title"><span class="emoji-icon">🧭</span> Enfoque de Aventuras (Categorías)</h3>
+            <div class="chart-container" id="category-pie-chart-container">
+              <!-- SVG dinámico de dona/torta por JS -->
+            </div>
+          </div>
+
+          <!-- Distribución de Atributos Desarrollados -->
+          <div class="glass-card">
+            <h3 class="card-title"><span class="emoji-icon">🧪</span> Atributo más Desarrollado</h3>
+            <div id="favorite-attribute-panel" class="favorites-stat-panel">
+              <!-- Cargado dinámicamente -->
+            </div>
+          </div>
+
+          <!-- Configuración, Copias de Respaldo e Importación -->
+          <div class="glass-card stat-card-full settings-card">
+            <h3 class="card-title"><span class="emoji-icon">⚙️</span> Ajustes del Animus / Sistema</h3>
+            <p class="settings-desc">Toda tu información se guarda de forma segura y local en tu navegador. Puedes exportarla para no perder tu progreso al cambiar de dispositivo.</p>
+            
+            <div class="settings-actions-grid">
+              <button id="export-btn" class="secondary-btn">
+                <span class="btn-icon">📤</span> Exportar Progreso (JSON)
+              </button>
+              
+              <label for="import-file" class="secondary-btn file-label-btn">
+                <span class="btn-icon">📥</span> Importar Progreso
+                <input type="file" id="import-file" accept=".json" style="display: none;">
+              </label>
+
+              <button id="reset-btn" class="danger-btn">
+                <span class="btn-icon">⚠️</span> Borrar Todos los Datos
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Barra de Navegación Inferior (Diseño Mobile-First) -->
+    <nav class="bottom-nav">
+      <button class="nav-item active" data-tab="dashboard">
+        <span class="nav-icon">🏠</span>
+        <span class="nav-text">Inicio</span>
+      </button>
+      <button class="nav-item" data-tab="quests">
+        <span class="nav-icon">⚔️</span>
+        <span class="nav-text">Misiones</span>
+      </button>
+      <button class="nav-item" data-tab="attributes">
+        <span class="nav-icon">🧪</span>
+        <span class="nav-text">Atributos</span>
+      </button>
+      <button class="nav-item" data-tab="achievements">
+        <span class="nav-icon">🏆</span>
+        <span class="nav-text">Logros</span>
+      </button>
+      <button class="nav-item" data-tab="stats">
+        <span class="nav-icon">📊</span>
+        <span class="nav-text">Reportes</span>
+      </button>
+    </nav>
+
+  </div>
+
+  <!-- ==================== MODALES ==================== -->
+
+  <!-- 1. Modal Editor de Misión (Crear / Editar) -->
+  <div id="quest-modal" class="modal-overlay">
+    <div class="modal-content glass-card">
+      <div class="modal-header">
+        <h3 id="modal-title" class="cinzel-title">Crear Nueva Misión</h3>
+        <button id="close-quest-modal-btn" class="close-btn">&times;</button>
+      </div>
+      
+      <form id="quest-form" class="quest-form">
+        <input type="hidden" id="quest-id-input">
+        
+        <div class="form-group">
+          <label for="quest-name-input">Nombre de la Misión *</label>
+          <input type="text" id="quest-name-input" required placeholder="Ej: Explorar el nuevo sendero del parque">
+        </div>
+
+        <div class="form-group">
+          <label for="quest-desc-input">Descripción de la Misión *</label>
+          <textarea id="quest-desc-input" required placeholder="Describe los pasos o el objetivo principal de esta aventura..."></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="quest-category-input">Categoría</label>
+            <select id="quest-category-input">
+              <option value="Exploración Urbana">Exploración Urbana</option>
+              <option value="Desarrollo de Personaje">Desarrollo de Personaje</option>
+              <option value="Interacciones con NPCs">Interacciones con NPCs</option>
+              <option value="Misticismo y Desconexión">Misticismo y Desconexión</option>
+              <option value="Aventuras Sociales">Aventuras Sociales</option>
+              <option value="Desafíos Mentales">Desafíos Mentales</option>
+              <option value="Creatividad">Creatividad</option>
+              <option value="Salud y Energía">Salud y Energía</option>
+              <option value="Aprendizaje">Aprendizaje</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="quest-difficulty-input">Dificultad</label>
+            <select id="quest-difficulty-input">
+              <option value="Bronce">🥉 Bronce (+10 XP)</option>
+              <option value="Plata">🥈 Plata (+25 XP)</option>
+              <option value="Oro">🥇 Oro (+50 XP)</option>
+              <option value="Épica">💎 Épica (+100 XP)</option>
+              <option value="Legendaria">👑 Legendaria (+250 XP)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Atributos que Potencia (Selecciona al menos uno) *</label>
+          <div class="attributes-checkbox-grid">
+            <label class="checkbox-container">
+              <input type="checkbox" name="quest-attributes" value="Curiosidad">
+              <span class="custom-checkbox"></span>
+              <span>🔍 Curiosidad</span>
+            </label>
+            <label class="checkbox-container">
+              <input type="checkbox" name="quest-attributes" value="Carisma">
+              <span class="custom-checkbox"></span>
+              <span>🗣️ Carisma</span>
+            </label>
+            <label class="checkbox-container">
+              <input type="checkbox" name="quest-attributes" value="Disciplina">
+              <span class="custom-checkbox"></span>
+              <span>🛡️ Disciplina</span>
+            </label>
+            <label class="checkbox-container">
+              <input type="checkbox" name="quest-attributes" value="Valentía">
+              <span class="custom-checkbox"></span>
+              <span>⚔️ Valentía</span>
+            </label>
+            <label class="checkbox-container">
+              <input type="checkbox" name="quest-attributes" value="Creatividad">
+              <span class="custom-checkbox"></span>
+              <span>🎨 Creatividad</span>
+            </label>
+            <label class="checkbox-container">
+              <input type="checkbox" name="quest-attributes" value="Perspectiva">
+              <span class="custom-checkbox"></span>
+              <span>👁️ Perspectiva</span>
+            </label>
+            <label class="checkbox-container">
+              <input type="checkbox" name="quest-attributes" value="Sabiduría">
+              <span class="custom-checkbox"></span>
+              <span>📖 Sabiduría</span>
+            </label>
+            <label class="checkbox-container">
+              <input type="checkbox" name="quest-attributes" value="Resistencia">
+              <span class="custom-checkbox"></span>
+              <span>🏃 Resistencia</span>
+            </label>
+            <label class="checkbox-container">
+              <input type="checkbox" name="quest-attributes" value="Espontaneidad">
+              <span class="custom-checkbox"></span>
+              <span>🌀 Espontaneidad</span>
+            </label>
+            <label class="checkbox-container">
+              <input type="checkbox" name="quest-attributes" value="Empatía">
+              <span class="custom-checkbox"></span>
+              <span>❤️ Empatía</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="quest-notes-input">Notas Personales / Diario de Bitácora</label>
+          <textarea id="quest-notes-input" placeholder="Añade reflexiones, fotos enlazadas o notas de aprendizaje aquí tras completarla..."></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" id="cancel-quest-btn" class="text-btn">Cancelar</button>
+          <button type="submit" id="save-quest-btn" class="primary-btn">Aceptar Misión</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 2. Modal Celebración de LEVEL UP -->
+  <div id="levelup-modal" class="modal-overlay">
+    <div class="modal-content levelup-content text-center">
+      <div class="levelup-glow"></div>
+      
+      <h2 class="levelup-title cinzel-title">¡SUBIDA DE NIVEL!</h2>
+      <p class="levelup-subtitle">Tu poder y sabiduría se incrementan...</p>
+      
+      <div class="levelup-badge-container">
+        <div class="levelup-old-level" id="levelup-old-level-val">1</div>
+        <div class="levelup-arrow">➜</div>
+        <div class="levelup-new-level" id="levelup-new-level-val">2</div>
+      </div>
+
+      <p class="levelup-rank-text">Has alcanzado el rango de:<br><strong id="levelup-rank-val" class="gold-text">Explorador Novato</strong></p>
+
+      <button id="levelup-close-btn" class="primary-btn shimmer-btn">Continuar Aventura ⚔️</button>
+    </div>
+  </div>
+
+  <!-- 3. Toast de Logro Desbloqueado -->
+  <div id="achievement-toast" class="achievement-toast">
+    <div class="toast-icon">🏆</div>
+    <div class="toast-info">
+      <span class="toast-title">¡Logro Desbloqueado!</span>
+      <span id="toast-achievement-name" class="toast-name">Primer Paso</span>
+    </div>
+  </div>
+
+  <!-- Script Principal -->
+  <script src="app.js"></script>
+  
+  <!-- Registro del Service Worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('service-worker.js')
+          .then((reg) => console.log('Service Worker registrado correctamente.', reg.scope))
+          .catch((err) => console.log('Fallo al registrar Service Worker:', err));
+      });
+    }
+  </script>
+</body>
+</html>
